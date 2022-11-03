@@ -8,6 +8,14 @@
             <spell>3</spell>
             <ws>3</ws>
         </locktime>
+        <text>
+            <font>ＭＳ ゴシック</font>
+            <pos>
+                <x>50</x>
+                <y>125</y>
+            </pos>
+            <size>12</size>
+        </text>
         <timers>false</timers>
     </global>
 </settings>

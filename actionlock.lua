@@ -14,6 +14,14 @@ local defaults = {
         ws = 3,
         spell = 3,
         ja = 1,
+    },
+    text = {
+        pos = {
+            x = 50,
+            y = 125,
+        },
+        font = 'ＭＳ ゴシック',
+        size = 12,
     }
 }
 local settings = config.load(defaults)
@@ -23,12 +31,12 @@ local box = texts.new(
     '${count}',
     {
         text = {
-            font = 'ＭＳ ゴシック',
-            size = 12
+            font = settings.text.font,
+            size = settings.text.size,
         },
         pos = {
-            x = 50,
-            y = 125
+            x = settings.text.pos.x,
+            y = settings.text.pos.y,
         }
     }
 )

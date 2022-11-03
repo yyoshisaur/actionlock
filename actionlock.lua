@@ -1,9 +1,23 @@
 _addon.name = 'actionlock'
-_addon.version = '0.2'
+_addon.version = '0.3'
 _addon.author = 'yyoshisaur'
 _addon.commands = {'actionlock', 'alock'}
 
 require('logger')
+
+config = require('config')
+local defaults = {
+    enabled = true,
+    timers = false,
+    locktime = {
+        range = 1,
+        ws = 3,
+        spell = 3,
+        ja = 1,
+    }
+}
+local settings = config.load(defaults)
+
 local texts = require('texts')
 local box = texts.new(
     '${count}',
@@ -25,23 +39,38 @@ local current_action = {
 }
 
 local category_lock_time = {
-    [2] = {time = 1, name = 'range'},
-    [3] = {time = 3, name = 'ws'},
-    [4] = {time = 3, name = 'spell'},
-    [6] = {time = 1, name = 'ja'},
-    [14] = {time = 1, name = 'dnc'},
-    [15] = {time = 1, name = 'run'},
+    [2] = {time = settings.locktime.range, name = 'range'},
+    [3] = {time = settings.locktime.ws, name = 'ws'},
+    [4] = {time = settings.locktime.spell, name = 'spell'},
+    [6] = {time = settings.locktime.ja, name = 'ja'},
+    [14] = {time = settings.locktime.ja, name = 'dnc'},
+    [15] = {time = settings.locktime.ja, name = 'run'},
 }
 
 windower.register_event('action', function(act)
+    if not settings.enabled then return end
     local me = windower.ffxi.get_mob_by_target('me')
     if me and act.actor_id == me.id and category_lock_time[act.category] then
-        current_action.time = os.clock()
-        current_action.lock_time = category_lock_time[act.category].time
+        if settings.timers then
+            local action_name = category_lock_time[act.category].name
+            if act.category == 14 or act.category == 15 then
+                action_name = category_lock_time[6].name
+            end
+            local lock_time = category_lock_time[act.category].time
+            local timers_commnad = 'timers c "'..action_name..'" '..lock_time..' down '
+            windower.send_command(timers_commnad)
+        else
+            current_action.time = os.clock()
+            current_action.lock_time = category_lock_time[act.category].time
+        end
     end
 end)
 
 windower.register_event('prerender', function()
+    if not settings.enabled and settings.timers then 
+        box:hide()
+        return
+    end 
     local timer_count = os.clock() - current_action.time
     local lock_time = current_action.lock_time
     if lock_time > timer_count then
@@ -65,23 +94,53 @@ function set_lock_time(cat, time)
     end
 end
 
+function display_settings()
+    local now_settings_text = L{}
+    now_settings_text:append('spell:'..settings.locktime.spell..'s')
+    now_settings_text:append('ws:'..settings.locktime.ws..'s')
+    now_settings_text:append('ja:'..settings.locktime.ja..'s')
+    now_settings_text:append('range:'..settings.locktime.range..'s')
+    log('* now settings *')
+    log('enabled: '..tostring(settings.enabled))
+    log('show timers: '..tostring(settings.timers))
+    log(now_settings_text:concat(' '))
+end
+
 local help_text = [[* set countdown *
 //actionlock spell/ws/ja/range time
-//alock spell 2.5]]
+//alock spell 2.5
+* show/hide countdown *
+//alock on/off
+* show timers plugin *
+//alock timers on/off
+* save settings *
+//alock save]]
 windower.register_event('addon command', function(...)
     local args = {...}
-    if args[1] and S{'range', 'ws', 'spell', 'ja'}:contains(args[1]) and args[2] then
+    if S{'range', 'ws', 'spell', 'ja'}:contains(args[1]) and args[2] then
         local cat = args[1]
         local time = tonumber(args[2])
+        settings.locktime[cat] = time
         set_lock_time(cat, time)
+    elseif S{'on', 'enable'}:contains(args[1]) then
+        settings.enabled = true
+        log('on')
+    elseif S{'off', 'disable'}:contains(args[1]) then
+        settings.enabled = false
+        log('off')
+    elseif args[1] == 'timers' then
+        if S{'on', 'enable'}:contains(args[2]) then
+            settings.timers = true
+        elseif S{'off', 'disable'}:contains(args[2]) then
+            settings.timers = false
+        end
+        log('timers: '..tostring(settings.timers))
+    elseif args[1] == 'save' then
+        settings:save()
+        log('save settings.')
+        display_settings()
     else
         log(help_text)
-        log('* now settings *')
-        local now_settings_text = L{}
-        now_settings_text:append('spell:'..category_lock_time[4].time..'s')
-        now_settings_text:append('ws:'..category_lock_time[3].time..'s')
-        now_settings_text:append('ja:'..category_lock_time[6].time..'s')
-        now_settings_text:append('range:'..category_lock_time[2].time..'s')
-        log(now_settings_text:concat(' '))
+        display_settings()
     end
 end)

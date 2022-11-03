@@ -57,7 +57,7 @@ windower.register_event('action', function(act)
                 action_name = category_lock_time[6].name
             end
             local lock_time = category_lock_time[act.category].time
-            local timers_commnad = 'timers c "'..action_name..'" '..lock_time..' down '
+            local timers_commnad = '@timers c "'..action_name..'" '..lock_time..' down abilities/00088.png'
             windower.send_command(timers_commnad)
         else
             current_action.time = os.clock()
@@ -120,8 +120,12 @@ windower.register_event('addon command', function(...)
     if S{'range', 'ws', 'spell', 'ja'}:contains(args[1]) and args[2] then
         local cat = args[1]
         local time = tonumber(args[2])
-        settings.locktime[cat] = time
-        set_lock_time(cat, time)
+        if time then
+            settings.locktime[cat] = time
+            set_lock_time(cat, time)
+        else
+            error('invalid time.')
+        end
     elseif S{'on', 'enable'}:contains(args[1]) then
         settings.enabled = true
         log('on')

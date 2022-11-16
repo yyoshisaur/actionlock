@@ -4,6 +4,7 @@ _addon.author = 'yyoshisaur'
 _addon.commands = {'actionlock', 'alock'}
 
 require('logger')
+require("pack")
 
 config = require('config')
 local defaults = {
@@ -55,24 +56,51 @@ local category_lock_time = {
     [15] = {time = settings.locktime.ja, name = 'run'},
 }
 
-windower.register_event('action', function(act)
-    if not settings.enabled then return end
-    local me = windower.ffxi.get_mob_by_target('me')
-    if me and act.actor_id == me.id and category_lock_time[act.category] then
-        if settings.timers then
-            local action_name = category_lock_time[act.category].name
-            if act.category == 14 or act.category == 15 then
-                action_name = category_lock_time[6].name
+local me = nil
+
+windower.register_event('load','login',function()
+    me = windower.ffxi.get_player()
+end)
+
+windower.register_event('incoming chunk', function(id, original)
+    if id == 0x28 then
+        if not settings.enabled then return end
+        local actor_id, target_count, action_category =  original:unpack('Ib10b4', 0x06)
+        if me and actor_id == me.id and category_lock_time[action_category] then
+            if settings.timers then
+                local action_name = category_lock_time[action_category].name
+                if action_category == 14 or action_category == 15 then
+                    action_name = category_lock_time[6].name
+                end
+                local lock_time = category_lock_time[action_category].time
+                local timers_commnad = '@timers c "'..action_name..'" '..lock_time..' down abilities/00088.png'
+                windower.send_command(timers_commnad)
+            else
+                current_action.time = os.clock()
+                current_action.lock_time = category_lock_time[action_category].time
             end
-            local lock_time = category_lock_time[act.category].time
-            local timers_commnad = '@timers c "'..action_name..'" '..lock_time..' down abilities/00088.png'
-            windower.send_command(timers_commnad)
-        else
-            current_action.time = os.clock()
-            current_action.lock_time = category_lock_time[act.category].time
         end
     end
 end)
+
+-- windower.register_event('action', function(act)
+--     if not settings.enabled then return end
+--     local me = windower.ffxi.get_mob_by_target('me')
+--     if me and act.actor_id == me.id and category_lock_time[act.category] then
+--         if settings.timers then
+--             local action_name = category_lock_time[act.category].name
+--             if act.category == 14 or act.category == 15 then
+--                 action_name = category_lock_time[6].name
+--             end
+--             local lock_time = category_lock_time[act.category].time
+--             local timers_commnad = '@timers c "'..action_name..'" '..lock_time..' down abilities/00088.png'
+--             windower.send_command(timers_commnad)
+--         else
+--             current_action.time = os.clock()
+--             current_action.lock_time = category_lock_time[act.category].time
+--         end
+--     end
+-- end)
 
 windower.register_event('prerender', function()
     if not settings.enabled and settings.timers then 

@@ -1,5 +1,5 @@
 _addon.name = 'actionlock'
-_addon.version = '0.3'
+_addon.version = '0.4'
 _addon.author = 'yyoshisaur'
 _addon.commands = {'actionlock', 'alock'}
 

@@ -87,25 +87,6 @@ windower.register_event('incoming chunk', function(id, original)
     end
 end)
 
--- windower.register_event('action', function(act)
---     if not settings.enabled then return end
---     local me = windower.ffxi.get_mob_by_target('me')
---     if me and act.actor_id == me.id and category_lock_time[act.category] then
---         if settings.timers then
---             local action_name = category_lock_time[act.category].name
---             if act.category == 14 or act.category == 15 then
---                 action_name = category_lock_time[6].name
---             end
---             local lock_time = category_lock_time[act.category].time
---             local timers_commnad = '@timers c "'..action_name..'" '..lock_time..' down abilities/00088.png'
---             windower.send_command(timers_commnad)
---         else
---             current_action.time = os.clock()
---             current_action.lock_time = category_lock_time[act.category].time
---         end
---     end
--- end)
-
 windower.register_event('prerender', function()
     if not settings.enabled and settings.timers then 
         box:hide()

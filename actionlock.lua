@@ -15,6 +15,7 @@ local defaults = {
         ws = 3,
         spell = 3,
         ja = 1,
+        interruption = 3,
     },
     text = {
         pos = {
@@ -52,11 +53,13 @@ local category_lock_time = {
     [3] = {time = settings.locktime.ws, name = 'ws'},
     [4] = {time = settings.locktime.spell, name = 'spell'},
     [6] = {time = settings.locktime.ja, name = 'ja'},
+    [8] = {time = settings.locktime.interruption, name = 'interruption'},
     [14] = {time = settings.locktime.ja, name = 'dnc'},
     [15] = {time = settings.locktime.ja, name = 'run'},
 }
 
 local me = nil
+local spell_interruption = 28787
 
 windower.register_event('load','login',function()
     me = windower.ffxi.get_player()
@@ -65,8 +68,9 @@ end)
 windower.register_event('incoming chunk', function(id, original)
     if id == 0x28 then
         if not settings.enabled then return end
-        local actor_id, target_count, action_category =  original:unpack('Ib10b4', 0x06)
+        local actor_id, target_count, action_category, param =  original:unpack('Ib10b4b16', 0x06)
         if me and actor_id == me.id and category_lock_time[action_category] then
+            if action_category == 8 and param ~= spell_interruption then return end
             if settings.timers then
                 local action_name = category_lock_time[action_category].name
                 if action_category == 14 or action_category == 15 then
@@ -136,6 +140,7 @@ function display_settings()
     now_settings_text:append('ws:'..settings.locktime.ws..'s')
     now_settings_text:append('ja:'..settings.locktime.ja..'s')
     now_settings_text:append('range:'..settings.locktime.range..'s')
+    now_settings_text:append('spell interruption:'..settings.locktime.interruption..'s')
     log('* now settings *')
     log('enabled: '..tostring(settings.enabled))
     log('show timers: '..tostring(settings.timers))
@@ -153,7 +158,7 @@ local help_text = [[* set countdown *
 //alock save]]
 windower.register_event('addon command', function(...)
     local args = {...}
-    if S{'range', 'ws', 'spell', 'ja'}:contains(args[1]) and args[2] then
+    if S{'range', 'ws', 'spell', 'ja', 'interruption'}:contains(args[1]) and args[2] then
         local cat = args[1]
         local time = tonumber(args[2])
         if time then

@@ -3,6 +3,7 @@
     <global>
         <enabled>true</enabled>
         <locktime>
+            <interruption>3</interruption>
             <ja>1</ja>
             <range>1</range>
             <spell>3</spell>

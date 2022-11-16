@@ -4,7 +4,7 @@
 
 - カウントダウンの設定
 
-        //alock spell/ws/ja/range time
+        //alock spell/ws/ja/range/interruption time
     
     例) ウェポンスキル後のカウントダウンを10秒に設定
 

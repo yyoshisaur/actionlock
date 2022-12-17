@@ -4,13 +4,14 @@
         <enabled>true</enabled>
         <locktime>
             <interruption>3</interruption>
+            <item>0</item>
             <ja>1</ja>
             <range>1</range>
             <spell>3</spell>
             <ws>3</ws>
         </locktime>
         <text>
-            <font>ＭＳ ゴシック</font>
+            <font>Consolas</font>
             <pos>
                 <x>50</x>
                 <y>125</y>
@@ -18,5 +19,6 @@
             <size>12</size>
         </text>
         <timers>false</timers>
+        <use_item>false</use_item>
     </global>
 </settings>

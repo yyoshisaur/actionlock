@@ -1,28 +1,32 @@
 _addon.name = 'actionlock'
-_addon.version = '0.4'
+_addon.version = '0.5'
 _addon.author = 'yyoshisaur'
 _addon.commands = {'actionlock', 'alock'}
 
 require('logger')
 require("pack")
 
+local items = require('resources').items
+
 config = require('config')
 local defaults = {
     enabled = true,
     timers = false,
+    use_item = false,
     locktime = {
         range = 1,
         ws = 3,
         spell = 3,
         ja = 1,
         interruption = 3,
+        item = 0,
     },
     text = {
         pos = {
             x = 50,
             y = 125,
         },
-        font = 'ＭＳ ゴシック',
+        font = 'Consolas',
         size = 12,
     }
 }
@@ -52,6 +56,7 @@ local category_lock_time = {
     [2] = {time = settings.locktime.range, name = 'range'},
     [3] = {time = settings.locktime.ws, name = 'ws'},
     [4] = {time = settings.locktime.spell, name = 'spell'},
+    [5] = {time = settings.locktime.item, name = 'item'},
     [6] = {time = settings.locktime.ja, name = 'ja'},
     [8] = {time = settings.locktime.interruption, name = 'interruption'},
     [14] = {time = settings.locktime.ja, name = 'dnc'},
@@ -71,17 +76,28 @@ windower.register_event('incoming chunk', function(id, original)
         local actor_id, target_count, action_category, param =  original:unpack('Ib10b4b16', 0x06)
         if me and actor_id == me.id and category_lock_time[action_category] then
             if action_category == 8 and param ~= spell_interruption then return end
+
+            local lock_time = category_lock_time[action_category].time
+            if action_category == 5 then
+                if not settings.use_item then return end
+                local used_item = items[param] 
+                if used_item and used_item.cast_time then 
+                    lock_time = lock_time + used_item.cast_time
+                else
+                    return
+                end
+            end
+
             if settings.timers then
                 local action_name = category_lock_time[action_category].name
                 if action_category == 14 or action_category == 15 then
                     action_name = category_lock_time[6].name
                 end
-                local lock_time = category_lock_time[action_category].time
                 local timers_commnad = '@timers c "'..action_name..'" '..lock_time..' down abilities/00088.png'
                 windower.send_command(timers_commnad)
             else
                 current_action.time = os.clock()
-                current_action.lock_time = category_lock_time[action_category].time
+                current_action.lock_time = lock_time
             end
         end
     end
@@ -122,6 +138,7 @@ function display_settings()
     now_settings_text:append('ja:'..settings.locktime.ja..'s')
     now_settings_text:append('range:'..settings.locktime.range..'s')
     now_settings_text:append('spell interruption:'..settings.locktime.interruption..'s')
+    now_settings_text:append('item:'..settings.locktime.item..'s')
     log('* now settings *')
     log('enabled: '..tostring(settings.enabled))
     log('show timers: '..tostring(settings.timers))
@@ -129,7 +146,7 @@ function display_settings()
 end
 
 local help_text = [[* set countdown *
-//actionlock spell/ws/ja/range time
+//actionlock spell/ws/ja/range/interruption/item time
 //alock spell 2.5
 * show/hide countdown *
 //alock on/off
@@ -139,7 +156,7 @@ local help_text = [[* set countdown *
 //alock save]]
 windower.register_event('addon command', function(...)
     local args = {...}
-    if S{'range', 'ws', 'spell', 'ja', 'interruption'}:contains(args[1]) and args[2] then
+    if S{'range', 'ws', 'spell', 'ja', 'interruption', 'item'}:contains(args[1]) and args[2] then
         local cat = args[1]
         local time = tonumber(args[2])
         if time then
@@ -165,6 +182,13 @@ windower.register_event('addon command', function(...)
         settings:save()
         log('save settings.')
         display_settings()
+    elseif args[1] == 'testitem' then
+        if S{'on', 'enable'}:contains(args[2]) then
+            settings.use_item = true
+        elseif S{'off', 'disable'}:contains(args[2]) then
+            settings.use_item = false
+        end
+        log('[unstable] show item time: '..tostring(settings.use_item))
     else
         log(help_text)
         display_settings()

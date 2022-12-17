@@ -20,10 +20,19 @@
         //alock timers on/off
         //alock timers enable/disable
 
-- 設定をdata/setting.xmlに保存
+- 設定をdata/settings.xmlに保存
 
         //alock save
 
 - ヘルプを表示
 
         //alock
+
+- (不安定, テスト) アイテム使用後のカウントダウンを表示
+
+  アイテム使用後にアイテムのキャストタイムと同じ時間をカウントダウンする。
+
+        //alock testitem on/off
+        //alock testitem enable/disable
+
+  
